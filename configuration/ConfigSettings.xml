@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<category name="Licensing">
+		<setting type="string" name="License Code" variable="LicenseCode" />
+	</category>
+	<category name="Device Info">
+		<setting type="mcstring" name="Model" variable="Model" default="touchhd">
+			<choice name="Mini-8" value="mini8" />
+			<choice name="Pro" value="pro" />
+			<choice name="Touch HD" value="touchhd" />
+		</setting>
+		<setting type="string" name="IP Address" variable="IPAddress" default="0.0.0.0" description="The IP Address or hostname of the RainMachine"/>
+		<setting type="integer" name="Port" variable="Port" default="8080" description="The SSL Port of the RainMachine"/>
+		<setting type="integer" name="Program Count" variable="ProgramCount" default="3" description="The number of programs in use on the device" />
+		<setting type="mcinteger" name="Zone Count" variable="ZoneCount" default="8" description="The number of zones in use on the device">
+			<choice name="1" value="1"/>
+			<choice name="2" value="2"/>
+			<choice name="3" value="3"/>
+			<choice name="4" value="4"/>
+			<choice name="5" value="5"/>
+			<choice name="6" value="6"/>
+			<choice name="7" value="7"/>
+			<choice name="8" value="8"/>
+			<choice name="9" value="9" />
+			<choice name="10" value="10" />
+			<choice name="11" value="11" />
+			<choice name="12" value="12" />
+			<choice name="13" value="13" />
+			<choice name="14" value="14" />
+			<choice name="15" value="15" />
+			<choice name="16" value="16" />
+		</setting>
+		<setting type="string" name="Password" variable="Password" default="" description="The device password used for authentication"/>
+	</category>
+	<category name="Settings">
+		<setting type="boolean" name="Enable Polling" variable="EnablePolling" default="true" description="Whether to enable automatic polling.  If disabled, data will only be updated when triggered by a driver command."/>
+		<setting type="integer" name="Polling Interval" variable="PollingInterval" default="60" description="Polling interval in seconds" condition="$EnablePolling"/>
+	</category>
+	<category name="Debug Settings" description="Driver debug options" hidden="true">
+		<setting type="boolean" name="Enable Trace" variable="EnableTrace" description="Enable verbose debug output" />
+	</category>
+</configuration>

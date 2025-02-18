@@ -1,0 +1,137 @@
+<#@ output extension=".xml" #>
+<#@ include file="Variables.t4" #>
+<?xml version="1.0" encoding="utf-8"?>
+<variables>
+	<category name="Current Restriction">
+		<variable name="CurrentRestrictionHourly" sysvar="CurrentRestrictionHourly" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionFreeze" sysvar="CurrentRestrictionFreeze" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionMonth" sysvar="CurrentRestrictionMonth" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionWeekDay" sysvar="CurrentRestrictionWeekDay" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionRainDelay" sysvar="CurrentRestrictionRainDelay" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionRainDelayCounter" sysvar="CurrentRestrictionRainDelayCounter" type="integer" sample="1" />
+		<variable name="CurrentRestrictionRainSensor" sysvar="CurrentRestrictionRainSensor" type="boolean" sample="false" />
+		<variable name="CurrentRestrictionLastLeakDetected" sysvar="CurrentRestrictionLastLeakDetected" type="integer" sample="1495618396" />
+	</category>
+	<category name="Programs">
+		<variable name="Running Program Name" sysvar="RunningProgramName" type="string" sample="Morning Program" />
+		<variable name="Running Program Start Time" sysvar="RunningProgramStartTime" type="string" sample="07:30" />
+		<variable name="Program List" sysvar="ProgramList" type="list" />
+	</category>
+	<category name="Zones">
+		<variable name="Running Zone Name" sysvar="RunningZoneName" type="string" sample="Rear Yard" />
+		<variable name="Running Zone Remaining" sysvar="RunningZoneRemaining" type="integer" sample="600" />
+		<variable name="Zone List" sysvar="ZoneList" type="list" />
+	</category>
+	<category name="Selected Program">
+	    <variable name="Uid" sysvar="SelectedProgramUid" type="integer" />
+		<variable name="Name" sysvar="SelectedProgramName" type="string" sample="Morning Program" />
+		<variable name="Active" sysvar="SelectedProgramActive" type="boolean" sample="true" />
+		<variable name="Start Time" sysvar="SelectedProgramStartTime" type="string" sample="07:30" />
+		<variable name="Cycles" sysvar="SelectedProgramCycles" type="integer" sample="2" />
+		<variable name="Soak Seconds" sysvar="SelectedProgramSoak" type="integer" sample="60" />
+		<variable name="Cycle and Soak On" sysvar="SelectedProgramCsOn" type="boolean" sample="true" />
+		<variable name="Delay" sysvar="SelectedProgramDelay" type="integer" sample="300" />
+		<variable name="Delay On" sysvar="SelectedProgramDelayOn" type="boolean" sample="true" />
+		<variable name="Status" sysvar="SelectedProgramStatus" type="integer" sample="0" format="L:0:Not Running:1:Running:2:Queued" />
+		<variable name="Start Time Params" sysvar="SelectedProgramStartTimeParams" type="string" sample="10m After Sunrise" />
+		<variable name="Frequency Type" sysvar="SelectedProgramFrequencyType" type="integer" sample="0" format="L:0:Daily:1:Every N Days:2:Weekdays:3:N/A:4:Odd/Even Day" />
+		<variable name="Frequency Param" sysvar="SelectedProgramFrequencyParam" type="string" />
+		<variable name="Ignore Internet Weather" sysvar="SelectedProgramIgnoreInternetWeather" type="boolean" sample="true" />
+		<variable name="Forecasted Rain Amount" sysvar="SelectedProgramFutureField1" type="integer" sample="0" />
+		<variable name="Freq modified" sysvar="SelectedProgramFreqModified" type="integer" sample="50" min="0" max="100" />
+		<variable name="Use Water Sense" sysvar="SelectedProgramUseWaterSense" type="boolean" sample="true" />
+		<variable name="Next Run" sysvar="SelectedProgramNextRun" type="string" sample="2021-07-25" />
+		<variable name="Start Date" sysvar="SelectedProgramStartDate" type="string" sample="2021-07-25" />
+		<variable name="End Date" sysvar="SelectedProgramEndDate" type="string" sample="2021-07-26" />
+		<variable name="Yearly Recurring" sysvar="SelectedProgramYearlyRecurring" type="boolean" sample="true" />
+		<variable name="Simulation Expired" sysvar="SelectedProgramSimulationExpired" type="boolean" sample="false" />
+<#
+for (var i = 1; i <= zoneCount; i++)
+{
+#>
+		<variable name="Watering Time <#= i #> Id" sysvar="SelectedProgramZone<#= i #>Id" type="integer" sample="1" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> Order" sysvar="SelectedProgramZone<#= i #>Order" type="integer" sample="1" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> Name" sysvar="SelectedProgramZone<#= i #>Name" type="string" sample="Rear Yard" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> Duration" sysvar="SelectedProgramZone<#= i #>Duration" type="integer" sample="600" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> Active" sysvar="SelectedProgramZone<#= i #>Active" type="boolean" sample="true" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> User Percentage" sysvar="SelectedProgramZone<#= i #>UserPercentage" type="string" sample="1.0" condition="$ZoneCount >= <#= i #>" />
+		<variable name="Watering Time <#= i #> Min Runtime Coef" sysvar="SelectedProgramZone<#= i #>MinRuntimeCoef" type="integer" sample="1" condition="$ZoneCount >= <#= i #>" />
+<#
+}
+#>
+	</category>
+	<category name="Selected Zone">
+		<variable name="Active" sysvar="SelectedZoneActive" type="boolean" sample="false" />
+		<variable name="Cycle" sysvar="SelectedZoneCycle" type="integer" sample="1" />
+		<variable name="Machine Duration" sysvar="SelectedZoneMachineDuration" type="integer" sample="20" />
+		<variable name="Name" sysvar="SelectedZoneName" type="string" sample="Rear Yard" />
+		<variable name="Number of Cycles" sysvar="SelectedZoneNumberOfCycles" type="integer" sample="3" />
+		<variable name="Remaining" sysvar="SelectedZoneRemaining" type="integer" sample="600" />
+		<variable name="Restriction" sysvar="SelectedZoneRestriction" type="boolean" sample="false" />
+		<variable name="State" sysvar="SelectedZoneState" type="integer" sample="0" format="L:0:Not Running:1:Running:2:Queued" />
+		<variable name="User Duration" sysvar="SelectedZoneUserDuration" type="integer" sample="20" />
+	</category>
+<#
+for (var i = 1; i <= programCount; i++)
+{
+#>
+	<category name="Program <#= i #>" condition="$ProgramCount >= <#= i #>">
+	    <variable name="Uid" sysvar="Program<#= i #>Uid" type="integer" />
+		<variable name="Name" sysvar="Program<#= i #>Name" type="string" sample="Morning Program" />
+		<variable name="Active" sysvar="Program<#= i #>Active" type="boolean" sample="true" />
+		<variable name="Start Time" sysvar="Program<#= i #>StartTime" type="string" sample="07:30" />
+		<variable name="Cycles" sysvar="Program<#= i #>Cycles" type="integer" sample="2" />
+		<variable name="Soak Seconds" sysvar="Program<#= i #>Soak" type="integer" sample="60" />
+		<variable name="Cycle and Soak On" sysvar="Program<#= i #>CsOn" type="boolean" sample="true" />
+		<variable name="Delay" sysvar="Program<#= i #>Delay" type="integer" sample="300" />
+		<variable name="Delay On" sysvar="Program<#= i #>DelayOn" type="boolean" sample="true" />
+		<variable name="Status" sysvar="Program<#= i #>Status" type="integer" sample="0" format="L:0:Not Running:1:Running:2:Queued" />
+		<variable name="Start Time Params" sysvar="Program<#= i #>StartTimeParams" type="string" sample="10m After Sunrise" />
+		<variable name="Frequency Type" sysvar="Program<#= i #>FrequencyType" type="integer" sample="0" format="L:0:Daily:1:Every N Days:2:Weekdays:3:N/A:4:Odd/Even Day" />
+		<variable name="Frequency Param" sysvar="Program<#= i #>FrequencyParam" type="string" />
+		<variable name="Ignore Internet Weather" sysvar="Program<#= i #>IgnoreInternetWeather" type="boolean" sample="true" />
+		<variable name="Forecasted Rain Amount" sysvar="Program<#= i #>FutureField1" type="integer" sample="0" />
+		<variable name="Freq modified" sysvar="Program<#= i #>FreqModified" type="integer" sample="50" min="0" max="100" />
+		<variable name="Use Water Sense" sysvar="Program<#= i #>UseWaterSense" type="boolean" sample="true" />
+		<variable name="Next Run" sysvar="Program<#= i #>NextRun" type="string" sample="2021-07-25" />
+		<variable name="Start Date" sysvar="Program<#= i #>StartDate" type="string" sample="2021-07-25" />
+		<variable name="End Date" sysvar="Program<#= i #>EndDate" type="string" sample="2021-07-26" />
+		<variable name="Yearly Recurring" sysvar="Program<#= i #>YearlyRecurring" type="boolean" sample="true" />
+		<variable name="Simulation Expired" sysvar="Program<#= i #>SimulationExpired" type="boolean" sample="false" />
+<#
+for (var j = 1; j <= zoneCount; j++)
+{
+#>
+		<variable name="Watering Time <#= j #> Id" sysvar="Program<#= i #>Zone<#= j #>Id" type="integer" sample="1" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> Order" sysvar="Program<#= i #>Zone<#= j #>Order" type="integer" sample="1" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> Name" sysvar="Program<#= i #>Zone<#= j #>Name" type="string" sample="Rear Yard" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> Duration" sysvar="Program<#= i #>Zone<#= j #>Duration" type="integer" sample="600" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> Active" sysvar="Program<#= i #>Zone<#= j #>Active" type="boolean" sample="true" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> User Percentage" sysvar="Program<#= i #>Zone<#= j #>UserPercentage" type="string" sample="1.0" condition="$ZoneCount >= <#= j #>" />
+		<variable name="Watering Time <#= j #> Min Runtime Coef" sysvar="Program<#= i #>Zone<#= j #>MinRuntimeCoef" type="integer" sample="1" condition="$ZoneCount >= <#= j #>" />
+<#
+}
+#>
+	</category>
+<#
+}
+#>
+<#
+for (var i = 1; i <= zoneCount; i++)
+{
+#>
+	<category name="Zone <#= i #>" condition="$ZoneCount >= <#= i #>">
+		<variable name="Active" sysvar="Zone<#= i #>Active" type="boolean" sample="false" />
+		<variable name="Cycle" sysvar="Zone<#= i #>Cycle" type="integer" sample="1" />
+		<variable name="Machine Duration" sysvar="Zone<#= i #>MachineDuration" type="integer" sample="20" />
+		<variable name="Name" sysvar="Zone<#= i #>Name" type="string" sample="Rear Yard" />
+		<variable name="Number of Cycles" sysvar="Zone<#= i #>NumberOfCycles" type="integer" sample="3" />
+		<variable name="Remaining" sysvar="Zone<#= i #>Remaining" type="integer" sample="600" />
+		<variable name="Restriction" sysvar="Zone<#= i #>Restriction" type="boolean" sample="false" />
+		<variable name="State" sysvar="Zone<#= i #>State" type="integer" sample="0" format="L:0:Not Running:1:Running:2:Queued" />
+		<variable name="User Duration" sysvar="Zone<#= i #>UserDuration" type="integer" sample="20" />
+	</category>
+<#
+}
+#>
+</variables>

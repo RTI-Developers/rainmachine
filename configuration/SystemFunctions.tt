@@ -1,0 +1,69 @@
+<#@ output extension=".xml" #>
+<#@ include file="Variables.t4" #>
+<?xml version="1.0" encoding="utf-8" ?>
+<functions>
+	<category name="Device Commands" >
+		<function name="Refresh All Data" export="Refresh" repeatrate="0" />
+		<function name="Select Program From List" export="SelectProgram" repeatrate="0">
+			<parameter name="Index" type="integer" />
+		</function>
+		<function name="Select Zone From List" export="SelectZone" repeatrate="0">
+			<parameter name="Index" type="integer" />
+		</function>
+        <function name="Start Program" export="StartProgram" repeatrate="0">
+			<parameter name="Program" type="mcinteger">
+<#
+for (var i = 1; i <= programCount; i++)
+{
+#>
+				<choice name="Program <#= i #>" value="<#= i #>" condition="$ProgramCount >= <#= i #>"/>
+<#
+}
+#>
+			</parameter>
+		</function>
+        <function name="Stop Program" export="StopProgram" repeatrate="0">
+			<parameter name="Program" type="mcinteger">
+<#
+for (var i = 1; i <= programCount; i++)
+{
+#>
+				<choice name="Program <#= i #>" value="<#= i #>" condition="$ProgramCount >= <#= i #>"/>
+<#
+}
+#>
+			</parameter>
+		</function>
+		<function name="Start Selected Program" export="StartSelectedProgram" repeatrate="0" />
+		<function name="Start Selected Zone" export="StartSelectedZone" repeatrate="0">
+            <parameter name="Seconds" description="Duration to run in seconds" type="integer" default="60" />
+		</function>
+		<function name="Stop Selected Program" export="StopSelectedProgram" repeatrate="0" />
+		<function name="Stop Selected Zone" export="StopSelectedZone" repeatrate="0" />
+        <function name="Start Zone" export="StartZone" repeatrate="0">
+			<parameter name="Zone" type="mcinteger">
+<#
+for (var i = 1; i <= zoneCount; i++)
+{
+#>
+				<choice name="Zone <#= i #>" value="<#= i #>" condition="$ZoneCount >= <#= i #>"/>
+<#
+}
+#>
+			</parameter>
+            <parameter name="Seconds" description="Duration to run in seconds" type="integer" default="60" />
+		</function>
+        <function name="Stop Zone" export="StopZone" repeatrate="0">
+			<parameter name="Zone" type="mcinteger">
+<#
+for (var i = 1; i <= zoneCount; i++)
+{
+#>
+				<choice name="Zone <#= i #>" value="<#= i #>" condition="$ZoneCount >= <#= i #>"/>
+<#
+}
+#>
+			</parameter>
+		</function>
+	</category>
+</functions>

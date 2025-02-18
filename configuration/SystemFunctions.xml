@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<functions>
+	<category name="Device Commands" >
+		<function name="Refresh All Data" export="Refresh" repeatrate="0" />
+		<function name="Select Program From List" export="SelectProgram" repeatrate="0">
+			<parameter name="Index" type="integer" />
+		</function>
+		<function name="Select Zone From List" export="SelectZone" repeatrate="0">
+			<parameter name="Index" type="integer" />
+		</function>
+        <function name="Start Program" export="StartProgram" repeatrate="0">
+			<parameter name="Program" type="mcinteger">
+				<choice name="Program 1" value="1" condition="$ProgramCount >= 1"/>
+				<choice name="Program 2" value="2" condition="$ProgramCount >= 2"/>
+				<choice name="Program 3" value="3" condition="$ProgramCount >= 3"/>
+				<choice name="Program 4" value="4" condition="$ProgramCount >= 4"/>
+				<choice name="Program 5" value="5" condition="$ProgramCount >= 5"/>
+				<choice name="Program 6" value="6" condition="$ProgramCount >= 6"/>
+				<choice name="Program 7" value="7" condition="$ProgramCount >= 7"/>
+				<choice name="Program 8" value="8" condition="$ProgramCount >= 8"/>
+				<choice name="Program 9" value="9" condition="$ProgramCount >= 9"/>
+				<choice name="Program 10" value="10" condition="$ProgramCount >= 10"/>
+				<choice name="Program 11" value="11" condition="$ProgramCount >= 11"/>
+				<choice name="Program 12" value="12" condition="$ProgramCount >= 12"/>
+				<choice name="Program 13" value="13" condition="$ProgramCount >= 13"/>
+				<choice name="Program 14" value="14" condition="$ProgramCount >= 14"/>
+				<choice name="Program 15" value="15" condition="$ProgramCount >= 15"/>
+				<choice name="Program 16" value="16" condition="$ProgramCount >= 16"/>
+				<choice name="Program 17" value="17" condition="$ProgramCount >= 17"/>
+				<choice name="Program 18" value="18" condition="$ProgramCount >= 18"/>
+				<choice name="Program 19" value="19" condition="$ProgramCount >= 19"/>
+				<choice name="Program 20" value="20" condition="$ProgramCount >= 20"/>
+			</parameter>
+		</function>
+        <function name="Stop Program" export="StopProgram" repeatrate="0">
+			<parameter name="Program" type="mcinteger">
+				<choice name="Program 1" value="1" condition="$ProgramCount >= 1"/>
+				<choice name="Program 2" value="2" condition="$ProgramCount >= 2"/>
+				<choice name="Program 3" value="3" condition="$ProgramCount >= 3"/>
+				<choice name="Program 4" value="4" condition="$ProgramCount >= 4"/>
+				<choice name="Program 5" value="5" condition="$ProgramCount >= 5"/>
+				<choice name="Program 6" value="6" condition="$ProgramCount >= 6"/>
+				<choice name="Program 7" value="7" condition="$ProgramCount >= 7"/>
+				<choice name="Program 8" value="8" condition="$ProgramCount >= 8"/>
+				<choice name="Program 9" value="9" condition="$ProgramCount >= 9"/>
+				<choice name="Program 10" value="10" condition="$ProgramCount >= 10"/>
+				<choice name="Program 11" value="11" condition="$ProgramCount >= 11"/>
+				<choice name="Program 12" value="12" condition="$ProgramCount >= 12"/>
+				<choice name="Program 13" value="13" condition="$ProgramCount >= 13"/>
+				<choice name="Program 14" value="14" condition="$ProgramCount >= 14"/>
+				<choice name="Program 15" value="15" condition="$ProgramCount >= 15"/>
+				<choice name="Program 16" value="16" condition="$ProgramCount >= 16"/>
+				<choice name="Program 17" value="17" condition="$ProgramCount >= 17"/>
+				<choice name="Program 18" value="18" condition="$ProgramCount >= 18"/>
+				<choice name="Program 19" value="19" condition="$ProgramCount >= 19"/>
+				<choice name="Program 20" value="20" condition="$ProgramCount >= 20"/>
+			</parameter>
+		</function>
+		<function name="Start Selected Program" export="StartSelectedProgram" repeatrate="0" />
+		<function name="Start Selected Zone" export="StartSelectedZone" repeatrate="0">
+            <parameter name="Seconds" description="Duration to run in seconds" type="integer" default="60" />
+		</function>
+		<function name="Stop Selected Program" export="StopSelectedProgram" repeatrate="0" />
+		<function name="Stop Selected Zone" export="StopSelectedZone" repeatrate="0" />
+        <function name="Start Zone" export="StartZone" repeatrate="0">
+			<parameter name="Zone" type="mcinteger">
+				<choice name="Zone 1" value="1" condition="$ZoneCount >= 1"/>
+				<choice name="Zone 2" value="2" condition="$ZoneCount >= 2"/>
+				<choice name="Zone 3" value="3" condition="$ZoneCount >= 3"/>
+				<choice name="Zone 4" value="4" condition="$ZoneCount >= 4"/>
+				<choice name="Zone 5" value="5" condition="$ZoneCount >= 5"/>
+				<choice name="Zone 6" value="6" condition="$ZoneCount >= 6"/>
+				<choice name="Zone 7" value="7" condition="$ZoneCount >= 7"/>
+				<choice name="Zone 8" value="8" condition="$ZoneCount >= 8"/>
+				<choice name="Zone 9" value="9" condition="$ZoneCount >= 9"/>
+				<choice name="Zone 10" value="10" condition="$ZoneCount >= 10"/>
+				<choice name="Zone 11" value="11" condition="$ZoneCount >= 11"/>
+				<choice name="Zone 12" value="12" condition="$ZoneCount >= 12"/>
+				<choice name="Zone 13" value="13" condition="$ZoneCount >= 13"/>
+				<choice name="Zone 14" value="14" condition="$ZoneCount >= 14"/>
+				<choice name="Zone 15" value="15" condition="$ZoneCount >= 15"/>
+				<choice name="Zone 16" value="16" condition="$ZoneCount >= 16"/>
+			</parameter>
+            <parameter name="Seconds" description="Duration to run in seconds" type="integer" default="60" />
+		</function>
+        <function name="Stop Zone" export="StopZone" repeatrate="0">
+			<parameter name="Zone" type="mcinteger">
+				<choice name="Zone 1" value="1" condition="$ZoneCount >= 1"/>
+				<choice name="Zone 2" value="2" condition="$ZoneCount >= 2"/>
+				<choice name="Zone 3" value="3" condition="$ZoneCount >= 3"/>
+				<choice name="Zone 4" value="4" condition="$ZoneCount >= 4"/>
+				<choice name="Zone 5" value="5" condition="$ZoneCount >= 5"/>
+				<choice name="Zone 6" value="6" condition="$ZoneCount >= 6"/>
+				<choice name="Zone 7" value="7" condition="$ZoneCount >= 7"/>
+				<choice name="Zone 8" value="8" condition="$ZoneCount >= 8"/>
+				<choice name="Zone 9" value="9" condition="$ZoneCount >= 9"/>
+				<choice name="Zone 10" value="10" condition="$ZoneCount >= 10"/>
+				<choice name="Zone 11" value="11" condition="$ZoneCount >= 11"/>
+				<choice name="Zone 12" value="12" condition="$ZoneCount >= 12"/>
+				<choice name="Zone 13" value="13" condition="$ZoneCount >= 13"/>
+				<choice name="Zone 14" value="14" condition="$ZoneCount >= 14"/>
+				<choice name="Zone 15" value="15" condition="$ZoneCount >= 15"/>
+				<choice name="Zone 16" value="16" condition="$ZoneCount >= 16"/>
+			</parameter>
+		</function>
+	</category>
+</functions>

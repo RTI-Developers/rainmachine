@@ -5,7 +5,7 @@ const passwordConfigKey = 'Password';
 const modelCodeConfigKey = 'Model';
 const pollingIntervalConfigKey = 'PollingInterval';
 const portConfigKey = 'Port';
-const programCountConfigKey = 'ZoneCount';
+const programCountConfigKey = 'ProgramCount';
 const programListConfigKey = 'ProgramList';
 const zoneCountConfigKey = 'ZoneCount';
 const zoneListConfigKey = 'ZoneList';
@@ -15,7 +15,6 @@ const programList = new SystemVarsList<string>(programListConfigKey);
 const zoneCount = parseInt(Config.Get(zoneCountConfigKey));
 const zoneList = new SystemVarsList<string>(zoneListConfigKey);
 const logger = new Logger('Rain Machine Driver:', Config.Get(enableTraceConfigKey) == 'true');
-const refreshTimer = new Timer();
 
 enum LicenseState {
     DemoExpired = 0,
@@ -35,7 +34,7 @@ function Init() {
         Config.Get(hostConfigKey),
         parseInt(Config.Get(portConfigKey)),
         Config.Get(passwordConfigKey),
-        Config.Get(enablePollingConfigKey) === 'true' ? parseInt(Config.Get(pollingIntervalConfigKey)) * 1000 : 0,
+        Config.Get(enablePollingConfigKey) === 'true' ? parseInt(Config.Get(pollingIntervalConfigKey)) : 0,
         logger,
         OnCommRx,
         OnConnect,
@@ -52,7 +51,7 @@ function OnCommRx(data: string) { device.OnCommRx(data); }
 function OnConnect() { device.OnConnect(); }
 function OnConnectFailure() { device.OnConnectFailure(); }
 function OnDisconnect() { device.OnDisconnect(); }
-function OnPollingTimer() { device.OnPollingTimer(); }
+function OnPollingTimer() { logger.logTrace('Polling Timer Fired'); device.OnPollingTimer(); }
 function OnSslHandshake() { device.OnSslHandshake(); }
 function OnSslHandshakeFailure() { device.OnSslHandshakeFailure(); }
 
@@ -116,13 +115,13 @@ function OnStateChanged() {
         for (let j = 0; j < wateringTimeListLength; j++) {
             const wateringTime = program.wateringTimes[j];
     
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Id', wateringTime.id);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Order', wateringTime.order);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Name', wateringTime.name);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Duration', wateringTime.duration);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Active', wateringTime.active);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'UserPercentage', wateringTime.userPercentage);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'MinRuntimeCoef', wateringTime.minRuntimeCoef);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Id', wateringTime.id);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Order', wateringTime.order);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Name', wateringTime.name);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Duration', wateringTime.duration);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Active', wateringTime.active);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'UserPercentage', wateringTime.userPercentage);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'MinRuntimeCoef', wateringTime.minRuntimeCoef);
         }
     }
 
@@ -186,7 +185,6 @@ function OnStateChanged() {
     if (!foundRunningZone) {
         logger.logTrace('No running zone found');
 
-        foundRunningZone = true;
         SystemVars.Write('RunningZoneName', '');
         SystemVars.Write('RunningZoneRemaining', 0);
     }

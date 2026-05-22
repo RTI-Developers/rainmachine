@@ -9,22 +9,20 @@ namespace RainMachine {
         private readonly logger: Logger | null;
         private readonly loggerContext: string = '';
         private readonly model: Model | null = null;
-        private readonly onPollingTimer: () => void;
         private readonly onStateChanged: () => void;
         private readonly password: string = '';
-        private readonly pollingInterval: number = 0;
-        private readonly pollingTimer: Timer | null;
+        private readonly pollingTimer: ScheduledEvent | null = null;
         private readonly port: number | null;
         private readonly requestQueue: Request[] = [];
-        
+
         private activeRequest: Request | null = null;
         private accessToken: string = '';
 
         public ApiVersion: string = '';
         public HardwareVersion: string = '';
         public Programs: Program[] = [];
-        public MasterZone: Zone | null;
-        public Restrictions: CurrentRestrictions | null;
+        public MasterZone: Zone | null = null;
+        public Restrictions: CurrentRestrictions | null = null;
         public SoftwareVersion: string = '';
         public Zones: Zone[] = [];
 
@@ -48,10 +46,10 @@ namespace RainMachine {
             this.host = host;
             this.port = port;
             this.password = password;
-            this.pollingInterval = pollingInterval;
             this.logger = logger;
-            this.onPollingTimer = onPollingTimer;
             this.onStateChanged = onStateChanged;
+
+            this.loggerContext = "RainMachine.Device [" + host + ":" + port + "]";
 
             this.authRequest = this.CreateHttpRequest(
                 RequestType.Auth,
@@ -63,9 +61,7 @@ namespace RainMachine {
                 })
             );
 
-            this.loggerContext = "RainMachine.Device [" + host + ":" + port + "]";
-
-            this.http = new HTTP(onCommRx, host, port);
+            this.http = new HTTP(onCommRx);
             this.http.OnConnectFunc = onConnect;
             this.http.OnConnectFailedFunc = onConnectFailure;
             this.http.OnDisconnectFunc = onDisconnect;
@@ -73,8 +69,9 @@ namespace RainMachine {
             this.http.OnSSLHandshakeFailedFunc = onSslHandshakeFailure;
 
             if (pollingInterval > 0) {
-                this.pollingTimer = new Timer();
-                this.pollingTimer.Start(onPollingTimer, pollingInterval);
+                this.logger!.logTrace('Initializing Polling ScheduledEvent with pollingInterval: [' + pollingInterval + '] seconds', this.loggerContext);
+                this.pollingTimer = new ScheduledEvent(onPollingTimer, "Periodic", "Seconds", pollingInterval);
+                this.pollingTimer.Enable();
                 this.Refresh();
             }
             else {
@@ -83,10 +80,10 @@ namespace RainMachine {
         }
 
         private CreateHttpRequest(requestType: RequestType, urlPath: string, urlParams?: { [key: string]: string }, body?: string): Request {
-            this.logger!.logTrace('CreateHttpRequest, requestType: [' + requestType + '], urlPath: [' + urlPath +'], urlParams: [' + JSON.stringify(urlParams) + '], body: [' + body + ']', this.loggerContext);
-            
+            this.logger!.logTrace('CreateHttpRequest, requestType: [' + requestType + '], urlPath: [' + urlPath + '], urlParams: [' + JSON.stringify(urlParams) + '], body: [' + body + ']', this.loggerContext);
+
             let verb: ('GET' | 'POST') = 'GET';
-            
+
             switch (requestType) {
                 case RequestType.Auth:
                 case RequestType.ProgramStart:
@@ -105,7 +102,7 @@ namespace RainMachine {
                 requestData += '?x=x';
                 for (let key in urlParams) {
                     let value = urlParams[key];
-                    requestData + '&' + key + '=' + value;
+                    requestData += '&' + key + '=' + value;
                 }
             }
 
@@ -113,16 +110,16 @@ namespace RainMachine {
             if (requestType !== RequestType.Auth) {
                 requestData += 'Cookie: access_token=' + this.ACCESS_TOKEN_PLACEHOLDER + '\r\n'; // Use access token placeholder as access_token may change after command is queued
             }
-            requestData += 'Host: ' + this.host + ':' + this.port!.toString();
-        
+            requestData += 'Host: ' + this.host + ':' + this.port!.toString() + '\r\n';
+
             if (verb == 'POST') {
                 requestData += 'Content-type: application/json' + '\r\n';
                 requestData += 'Content-length: ' + (body?.length ?? 0) + '\r\n\r\n';
                 requestData += body;
             } else {
-                requestData += '\r\n\r\n';
+                requestData += '\r\n';
             }
-        
+
             this.logger!.logTrace(requestData, this.loggerContext, true);
 
             return {
@@ -138,38 +135,43 @@ namespace RainMachine {
             const bodyIndex = data.indexOf(bodySeparator);
 
             if (bodyIndex >= 0) {
-                return data.substr(bodyIndex + bodySeparator.length);
+                return data.substring(bodyIndex + bodySeparator.length);
             }
 
             return null;
         }
-        
-        private SendNextRequest() {
-            this.logger!.logTrace('SendNextRequest', this.loggerContext);
+
+        private OpenConnection() {
+            this.http!.Open(this.host, this.port!);
+            this.http!.AddRxHTTPFraming();
+        }
+
+        private ProcessQueue() {
+            this.logger!.logTrace('ProcessQueue', this.loggerContext);
 
             this.http!.Close();
 
             if (this.requestQueue.length > 0) {
-                this.http!.Open(this.host, this.port!.toString());
+                this.OpenConnection();
             }
         }
 
         public OnCommRx(data: string) {
             this.logger!.logTrace('OnCommRx', this.loggerContext);
 
-            this.http!.Disconnect();
-
             const activeRequest = this.activeRequest;
             this.activeRequest = null;
 
             if (!activeRequest) {
                 this.logger!.logError('Received response without a corresponding active request, data: [' + data + ']', this.loggerContext);
+                this.ProcessQueue();
                 return;
             }
 
             if (data.indexOf('HTTP/1.1 200') < 0 && activeRequest.type == RequestType.Auth) {
                 this.logger!.logError('Authentication Failed!', this.loggerContext);
-                this.requestQueue.length = 0;  // Clear queue
+                this.requestQueue.splice(0);  // Clear queue
+                this.ProcessQueue();
                 return;
             }
 
@@ -177,12 +179,13 @@ namespace RainMachine {
                 this.logger!.logTrace('Received unauthorized response, requeuing active request and auth request', this.loggerContext);
                 this.requestQueue.unshift(activeRequest);
                 this.requestQueue.unshift(this.authRequest!);
+                this.ProcessQueue();
                 return;
             }
 
             const responseBody = this.GetResponseBody(data);
 
-            this.logger!.logTrace('Handling response for activeRequest type: [' + RequestType[activeRequest.type] + ']', this.loggerContext);
+            this.logger!.logTrace('Handling response for activeRequest type: [' + RequestType[activeRequest.type!] + ']', this.loggerContext);
 
             if (responseBody) {
                 switch (activeRequest.type) {
@@ -191,7 +194,7 @@ namespace RainMachine {
 
                         if (this.accessToken.length <= 0) {
                             this.logger!.logTrace('AuthResponse missing access_token');
-                            this.requestQueue.length = 0;  // Clear queue
+                            this.requestQueue.splice(0);  // Clear queue
                         }
                         break;
                     case RequestType.Programs:
@@ -200,23 +203,23 @@ namespace RainMachine {
                         this.onStateChanged();
                         break;
                     case RequestType.ProgramStart:
-                        if (data.indexOf('200') < 0) {
+                        if (data.indexOf('HTTP/1.1 200') < 0) {
                             this.logger!.logError('Program Start Failed. data: [' + data + ']', this.loggerContext);
                             break;
                         }
-                        this.QueueProgramsRequest();
+                        this.SendProgramsRequest();
                         break;
                     case RequestType.ProgramStop:
-                        if (data.indexOf('200') < 0) {
+                        if (data.indexOf('HTTP/1.1 200') < 0) {
                             this.logger!.logError('Program Stop Failed. data: [' + data + ']', this.loggerContext);
                             break;
                         }
-                        this.QueueProgramsRequest();
+                        this.SendProgramsRequest();
                         break;
                     case RequestType.Restrictions:
                         const restrictionsResponse = (JSON.parse(responseBody) as CurrentRestrictions);
                         this.Restrictions = restrictionsResponse;
-                        this.onStateChanged();    
+                        this.onStateChanged();
                         break;
                     case RequestType.Version:
                         const versionResponse = (JSON.parse(responseBody) as Version);
@@ -235,41 +238,25 @@ namespace RainMachine {
                         this.onStateChanged();
                         break;
                     case RequestType.ZoneStart:
-                        if (data.indexOf('200') < 0) {
+                        if (data.indexOf('HTTP/1.1 200') < 0) {
                             this.logger!.logError('Zone Start Failed. data: [' + data + ']', this.loggerContext);
                             break;
                         }
-                        this.QueueZonesRequest();
+                        this.SendZonesRequest();
                         break;
                     case RequestType.ZoneStop:
-                        if (data.indexOf('200') < 0) {
+                        if (data.indexOf('HTTP/1.1 200') < 0) {
                             this.logger!.logError('Zone Stop Failed. data: [' + data + ']', this.loggerContext);
                             break;
                         }
-                        this.QueueZonesRequest();
+                        this.SendZonesRequest();
                         break;
                     default:
                         break;
                 }
             }
-        }
 
-        private QueueProgramsRequest() {
-            this.logger!.logTrace('QueueProgramsRequest', this.loggerContext);
-
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.Programs, 'program'));
-        }
-
-        private QueueRestrictionsRequest() {
-            this.logger!.logTrace('QueueRestrictionsRequest', this.loggerContext);
-
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.Restrictions, 'restrictions/currently'));
-        }
-
-        private QueueZonesRequest() {
-            this.logger!.logTrace('QueueRestrictionsRequest', this.loggerContext);
-
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.Zones, 'zone'));
+            this.ProcessQueue();
         }
 
         public OnConnect() {
@@ -281,20 +268,19 @@ namespace RainMachine {
         public OnConnectFailure() {
             this.logger!.logTrace('OnConnectionFailure', this.loggerContext);
 
-            this.http!.Close();
+            this.ProcessQueue();
         }
 
         public OnDisconnect() {
             this.logger!.logTrace('OnDisconnect', this.loggerContext);
 
-            this.SendNextRequest();
+            this.ProcessQueue();
         }
 
         public OnPollingTimer() {
             this.logger!.logTrace('OnPollingTimer', this.loggerContext);
 
             this.Refresh();
-            this.pollingTimer!.Start(this.onPollingTimer, this.pollingInterval);
         }
 
         public OnSslHandshakeFailure() {
@@ -302,20 +288,19 @@ namespace RainMachine {
         }
 
         public OnSslHandshake() {
-            this.logger!.logTrace('OnSslHandshakeSuccess', this.loggerContext);
+            this.logger!.logTrace('OnSslHandshake', this.loggerContext);
 
             this.activeRequest = this.requestQueue.shift() ?? null;
 
             if (this.activeRequest) {
                 const payload = this.activeRequest!.data.replace(this.ACCESS_TOKEN_PLACEHOLDER, this.accessToken); // Replace access token placeholder as access_token may change after command is queued
                 this.logger!.logTrace('Writing activeRequest, type: [' + this.activeRequest.type + '], payload: [' + payload + ']', this.loggerContext);
-                
-                this.http!.AddRxHTTPFraming();
-                this.http!.Write(payload);  
+
+                this.http!.Write(payload);
             } else {
                 this.logger!.logTrace('No activeRequest, disconnecting', this.loggerContext);
 
-                this.http!.Disconnect();
+                this.http!.Close();
             }
         }
 
@@ -326,46 +311,46 @@ namespace RainMachine {
             this.SendVersionsRequest();
         }
 
-        public SendProgramsRequest() { 
+        public SendProgramsRequest() {
             this.logger!.logTrace('SendProgramsRequest', this.loggerContext);
 
-            this.QueueProgramsRequest();
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.Programs, 'program'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
 
         public SendRestrictionsRequest() {
             this.logger!.logTrace('SendRestrictionsRequest', this.loggerContext);
 
-            this.QueueRestrictionsRequest();
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.Restrictions, 'restrictions/currently'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
 
         public SendVersionsRequest() {
             this.logger!.logTrace('SendVersionsRequest', this.loggerContext);
 
             this.requestQueue.push(this.CreateHttpRequest(RequestType.Version, 'apiVer'));
-            this.SendNextRequest();
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
-        
+
         public SendZonesRequest() {
             this.logger!.logTrace('SendZonesRequest', this.loggerContext);
 
-            this.QueueZonesRequest();
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.Zones, 'zone'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
 
         public StartProgram(program: number) {
             this.logger!.logTrace('StartProgram, program: [' + program + ']', this.loggerContext);
 
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.ProgramStart, 'program/' + program +'/start'));
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.ProgramStart, 'program/' + program + '/start'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
 
         public StopProgram(program: number) {
             this.logger!.logTrace('StopProgram, program: [' + program + ']', this.loggerContext);
 
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.ProgramStop, 'program/' + program +'/stop'));
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.ProgramStop, 'program/' + program + '/stop'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
 
         public StartZone(zone: number, duration: number) {
@@ -379,23 +364,23 @@ namespace RainMachine {
                     'zone/' + zone + '/start',
                     undefined,
                     JSON.stringify({ time: duration })
-            ));
-            this.SendNextRequest();
+                ));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
-        
+
         public StopZone(zone: number) {
             this.logger!.logTrace('StopZone, zone: [' + zone + ']', this.loggerContext);
 
             if (this.model == 'pro') { zone++; } // Account for 'master' zone
 
-            this.requestQueue.push(this.CreateHttpRequest(RequestType.ZoneStop, 'zone/' + zone +'/stop'));
-            this.SendNextRequest();
+            this.requestQueue.push(this.CreateHttpRequest(RequestType.ZoneStop, 'zone/' + zone + '/stop'));
+            if (this.http!.OpenState === 0) { this.OpenConnection(); }
         }
     }
 
     class Request {
-        data: string;
-        type: RequestType;
+        data: string = '';
+        type: RequestType | null = null;
     }
 
     export type Model = ('mini8' | 'pro' | 'touchhd');
@@ -423,21 +408,21 @@ namespace RainMachine {
         ProvisionFailed = 7,
         PasswordNotChanged = 8,
         ProgramValidationFailed = 9
-      }
-    
-      export enum ProgramStatus {
+    }
+
+    export enum ProgramStatus {
         NotRunning = 0,
         Running = 1,
         Queued = 2
-      }
-    
-      export enum ZoneState {
+    }
+
+    export enum ZoneState {
         NotRunning = 0,
         Running = 1,
         Queued = 2
-      }
-    
-      export enum VegetationType {
+    }
+
+    export enum VegetationType {
         NotSet = 0,
         NotSetOld = 1,
         Grass = 2,
@@ -448,9 +433,9 @@ namespace RainMachine {
         Bushes = 7,
         Xeriscape = 9,
         Other = 99
-      }
-    
-      export enum SoilType {
+    }
+
+    export enum SoilType {
         NotSet = 0,
         ClayLoam = 1,
         SiltyClay = 2,
@@ -463,9 +448,9 @@ namespace RainMachine {
         SiltLoam = 9,
         Silt = 10,
         Other = 99
-      }
-    
-      export enum SprinklerType {
+    }
+
+    export enum SprinklerType {
         NotSet = 0,
         PopupSpray = 1,
         Rotors = 2,
@@ -473,25 +458,25 @@ namespace RainMachine {
         Bubblers = 4,
         RotorsHigh = 5,
         Other = 99
-      }
-    
-      export enum SlopeType {
+    }
+
+    export enum SlopeType {
         NotSet = 0,
         Flat = 1,
         Moderate = 2,
         High = 3,
         VeryHigh = 4,
         Other = 99
-      }
-    
-      export enum SunExposure {
+    }
+
+    export enum SunExposure {
         NotSet = 0,
         FullSun = 1,
         PartialShade = 2,
         FullShade = 3
-      }
-    
-      export enum WateringFlag {
+    }
+
+    export enum WateringFlag {
         NormalWatering = 0,
         InterruptedByUser = 1,
         RestrictionThreshold = 2,
@@ -504,41 +489,27 @@ namespace RainMachine {
         MonthRestricted = 9,
         RainDelaySetByUser = 10,
         ProgramRainRestriction = 11
-      }
-    
-      export enum FrequencyType {
+    }
+
+    export enum FrequencyType {
         Daily = 0,
         EveryNDays = 1,
         Weekday = 2,
         OddEvenDay = 4
-      }
-    
-      export enum StartTimeType {
+    }
+
+    export enum StartTimeType {
         NormalStartTime = 0,
         Sunrise = 1,
         Sunset = 2
-      }
-    
-      export enum UpdateState {
+    }
+
+    export enum UpdateState {
         Idle = 1,
         Checking = 2,
         Downloading = 3,
         Upgrading = 4,
         Error = 5,
         Reboot = 6
-      }
+    }
 }
-
-// let StatusCodeMessages: { [key in RainMachine.StatusCode]: string } = {
-//     [RainMachine.StatusCode.Success]: "OK",
-//     [RainMachine.StatusCode.ExceptionOccurred]: "Exception occurred !",
-//     [RainMachine.StatusCode.NotAuthenticated]: "Not Authenticated !",
-//     [RainMachine.StatusCode.InvalidRequest]: "Invalid request !",
-//     [RainMachine.StatusCode.NotImplemented]: "Not implemented yet !",
-//     [RainMachine.StatusCode.NotFound]: "Not found !",
-//     [RainMachine.StatusCode.DBError]: "DB StatusCode !",
-//     [RainMachine.StatusCode.ProvisionFailed]: "Cannot provision unit",
-//     [RainMachine.StatusCode.PasswordNotChanged]: "Cannot change password",
-//     [RainMachine.StatusCode.ProgramValidationFailed]: "Invalid program constraints"
-// };
-

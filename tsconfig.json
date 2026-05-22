@@ -4,9 +4,10 @@
     "target": "es3",
     "allowJs": true,
     "outFile": "./dist/index.js",
-    "lib": ["es5"],
+    "lib": [],
     "module": "none",
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "ignoreDeprecations": "5.0"
   },
   "files": [
     "./src/json2.js",

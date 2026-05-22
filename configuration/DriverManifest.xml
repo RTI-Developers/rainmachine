@@ -8,7 +8,7 @@
 		copyright="Copyright 2020 Noesis Labs LLC"
 		deviceManufacturer="RainMachine"
 		deviceModel=""
-		driverVersion="1.1"
+		driverVersion="1.2"
 		
 		minimumRuntimeVersion="20"
 		minimumSoftwareVersion="9.9"

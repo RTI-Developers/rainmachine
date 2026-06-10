@@ -5,6 +5,8 @@
   "main": "index.ts",
   "dependencies": {},
   "devDependencies": {
+      "@rti-developers/sdk-types": "^1.1.0",
+      "@rti-developers/sdk-utils": "^1.0.0",
       "@typescript-eslint/eslint-plugin": "^5.60.1",
       "@typescript-eslint/parser": "5.60.1",
       "copyfiles": "^2.4.1",
@@ -14,7 +16,7 @@
   },
   "scripts": {
     "fileCopy": "copyfiles -u 1 \"configuration/*.xml\" \"documentation/*\" \"resources/*\" dist",
-    "process-t4": "t4 ./configuration/ConfigSettings.tt && t4 ./configuration/DeviceDescription.tt && t4 ./configuration/SystemEvents.tt && t4 ./configuration/SystemFunctions.tt && t4 ./configuration/SystemVariables.tt",
+    "process-t4": "t4 ./configuration/SystemFunctions.tt && t4 ./configuration/SystemVariables.tt",
     "uglify": "uglifyjs ./dist/index.js --compress arrows=false --mangle --output ./dist/index.js"
   },
   "author": "",

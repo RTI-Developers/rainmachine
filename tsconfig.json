@@ -7,13 +7,16 @@
     "lib": [],
     "module": "none",
     "strictNullChecks": true,
-    "ignoreDeprecations": "5.0"
+    "ignoreDeprecations": "5.0",
+    "typeRoots": ["./node_modules/@rti-developers", "./node_modules/@types"],
+    "types": ["sdk-types"]
   },
   "files": [
     "./src/json2.js",
-    "./src/logger.ts",
-    "./src/rainMachine.ts",
+    "./node_modules/@rti-developers/sdk-utils/src/global-handle-map.ts",
+    "./node_modules/@rti-developers/sdk-utils/src/logger.ts",
+    "./src/rain-machine.ts",
     "./src/index.ts"
   ],
-  "include": ["./src/typings/*.d.ts"]
+  "include": ["./src/typings/**/*.d.ts"]
 }

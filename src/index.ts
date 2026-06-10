@@ -5,7 +5,7 @@ const passwordConfigKey = 'Password';
 const modelCodeConfigKey = 'Model';
 const pollingIntervalConfigKey = 'PollingInterval';
 const portConfigKey = 'Port';
-const programCountConfigKey = 'ZoneCount';
+const programCountConfigKey = 'ProgramCount';
 const programListConfigKey = 'ProgramList';
 const zoneCountConfigKey = 'ZoneCount';
 const zoneListConfigKey = 'ZoneList';
@@ -15,7 +15,6 @@ const programList = new SystemVarsList<string>(programListConfigKey);
 const zoneCount = parseInt(Config.Get(zoneCountConfigKey));
 const zoneList = new SystemVarsList<string>(zoneListConfigKey);
 const logger = new Logger('Rain Machine Driver:', Config.Get(enableTraceConfigKey) == 'true');
-const refreshTimer = new Timer();
 
 enum LicenseState {
     DemoExpired = 0,
@@ -28,14 +27,14 @@ let selectedProgramIndex = -1;
 let selectedZoneIndex = -1;
 
 function Init() {
-    logger.logInfo('Initializing...');
+    logger.logInfo('Initializing...', LogInfoLevel.Low);
 
     device = new RainMachine.Device(
         Config.Get(modelCodeConfigKey) as RainMachine.Model,
         Config.Get(hostConfigKey),
         parseInt(Config.Get(portConfigKey)),
         Config.Get(passwordConfigKey),
-        Config.Get(enablePollingConfigKey) === 'true' ? parseInt(Config.Get(pollingIntervalConfigKey)) * 1000 : 0,
+        Config.Get(enablePollingConfigKey) === 'true' ? parseInt(Config.Get(pollingIntervalConfigKey)) : 0,
         logger,
         OnCommRx,
         OnConnect,
@@ -52,22 +51,22 @@ function OnCommRx(data: string) { device.OnCommRx(data); }
 function OnConnect() { device.OnConnect(); }
 function OnConnectFailure() { device.OnConnectFailure(); }
 function OnDisconnect() { device.OnDisconnect(); }
-function OnPollingTimer() { device.OnPollingTimer(); }
+function OnPollingTimer() { logger.logInfo('Polling Timer Fired', LogInfoLevel.High); device.OnPollingTimer(); }
 function OnSslHandshake() { device.OnSslHandshake(); }
 function OnSslHandshakeFailure() { device.OnSslHandshakeFailure(); }
 
 function OnStateChanged() {
-    logger.logTrace('OnStateChanged');
+    logger.logInfo('OnStateChanged', LogInfoLevel.High);
 
-    logger.logTrace('Updating Program List');
+    logger.logInfo('Updating Program List', LogInfoLevel.High);
     const programListLength = Math.min(device.Programs.length, programCount);
     if (programListLength !== programList.Size) {
-        logger.logTrace('Updating programList, adding [' + programListLength + '] items');
+        logger.logInfo('Updating programList, adding [' + programListLength + '] items', LogInfoLevel.High);
         programList.Open();
         programList.RemoveAll();
 
         for (let i = 0; i < programListLength; i++) {
-            logger.logTrace('Adding program [' + device.Programs[i].name + '] to programList');
+            logger.logInfo('Adding program [' + device.Programs[i].name + '] to programList', LogInfoLevel.High);
             programList.Insert(device.Programs[i].name);
         }
         programList.Close();
@@ -75,7 +74,7 @@ function OnStateChanged() {
         if (selectedProgramIndex < 0 || selectedProgramIndex >= programList.Size) { selectedProgramIndex = 0; }
     }
     
-    logger.logTrace('Updating Programs');
+    logger.logInfo('Updating Programs', LogInfoLevel.High);
     let foundRunningProgram = false;
     for (let i = 0; i < programListLength; i++) {
         const program = device.Programs[i];
@@ -104,36 +103,36 @@ function OnStateChanged() {
         SystemVars.Write('Program' + (i + 1) + 'SimulationExpired', program.simulationExpired);
 
         if (program.status == RainMachine.ProgramStatus.Running) {
-            logger.logTrace('Found running program, name: [' + program.name + ']');
+            logger.logInfo('Found running program, name: [' + program.name + ']', LogInfoLevel.High);
 
             foundRunningProgram = true;
             SystemVars.Write('RunningProgramName', program.name);
             SystemVars.Write('RunningProgramStartTime', program.startTime);
         }
 
-        logger.logTrace('Updating Program Watering Times');
+        logger.logInfo('Updating Program Watering Times', LogInfoLevel.High);
         const wateringTimeListLength = Math.min(program.wateringTimes.length, zoneCount);
         for (let j = 0; j < wateringTimeListLength; j++) {
             const wateringTime = program.wateringTimes[j];
     
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Id', wateringTime.id);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Order', wateringTime.order);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Name', wateringTime.name);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Duration', wateringTime.duration);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'Active', wateringTime.active);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'UserPercentage', wateringTime.userPercentage);
-            SystemVars.Write('Program' + (j + 1) + 'Zone' + wateringTime.id + 'MinRuntimeCoef', wateringTime.minRuntimeCoef);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Id', wateringTime.id);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Order', wateringTime.order);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Name', wateringTime.name);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Duration', wateringTime.duration);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'Active', wateringTime.active);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'UserPercentage', wateringTime.userPercentage);
+            SystemVars.Write('Program' + (i + 1) + 'Zone' + wateringTime.id + 'MinRuntimeCoef', wateringTime.minRuntimeCoef);
         }
     }
 
     if (!foundRunningProgram) {
-        logger.logTrace('No running program found');
+        logger.logInfo('No running program found', LogInfoLevel.High);
 
         SystemVars.Write('RunningProgramName', '');
         SystemVars.Write('RunningProgramStartTime', '');
     }
 
-    logger.logTrace('Updating Current Restictions');
+    logger.logInfo('Updating Current Restictions', LogInfoLevel.High);
     SystemVars.Write('CurrentRestrictionHourly', device.Restrictions?.hourly ?? false);
     SystemVars.Write('CurrentRestrictionFreeze', device.Restrictions?.freeze ?? false);
     SystemVars.Write('CurrentRestrictionMonth', device.Restrictions?.month ?? false);
@@ -143,15 +142,15 @@ function OnStateChanged() {
     SystemVars.Write('CurrentRestrictionRainSensor', device.Restrictions?.rainSensor ?? false);
     SystemVars.Write('CurrentRestrictionLastLeakDetected', device.Restrictions?.lastLeakDetected ?? 0);
 
-    logger.logTrace('Updating Zone List');
+    logger.logInfo('Updating Zone List', LogInfoLevel.High);
     const zoneListLength = Math.min(device.Zones.length, zoneCount);
     if (zoneListLength !== zoneList.Size) {
-        logger.logTrace('Updating zoneList, adding [' + zoneListLength + '] items');
+        logger.logInfo('Updating zoneList, adding [' + zoneListLength + '] items', LogInfoLevel.High);
         zoneList.Open();
         zoneList.RemoveAll();
 
         for (let i = 0; i < zoneListLength; i++) {
-            logger.logTrace('Adding zone [' + device.Zones[i].name + '] to zoneList');
+            logger.logInfo('Adding zone [' + device.Zones[i].name + '] to zoneList', LogInfoLevel.High);
             zoneList.Insert(device.Zones[i].name);
         }
         zoneList.Close();
@@ -159,7 +158,7 @@ function OnStateChanged() {
         if (selectedZoneIndex < 0 || selectedZoneIndex >= zoneList.Size) { selectedZoneIndex = 0; }
     }
 
-    logger.logTrace('Updating Zones');
+    logger.logInfo('Updating Zones', LogInfoLevel.High);
     let foundRunningZone = false;
     for (let i = 0; i < zoneListLength; i++) {
         const zone = device.Zones[i];
@@ -175,7 +174,7 @@ function OnStateChanged() {
         SystemVars.Write('Zone' + (i + 1) + 'UserDuration', zone.userDuration);
 
         if (zone.state == RainMachine.ZoneState.Running) {
-            logger.logTrace('Found running zone, name: [' + zone.name + ']');
+            logger.logInfo('Found running zone, name: [' + zone.name + ']', LogInfoLevel.High);
 
             foundRunningZone = true;
             SystemVars.Write('RunningZoneName', zone.name);
@@ -184,9 +183,8 @@ function OnStateChanged() {
     }
 
     if (!foundRunningZone) {
-        logger.logTrace('No running zone found');
+        logger.logInfo('No running zone found', LogInfoLevel.High);
 
-        foundRunningZone = true;
         SystemVars.Write('RunningZoneName', '');
         SystemVars.Write('RunningZoneRemaining', 0);
     }
@@ -197,7 +195,7 @@ function OnStateChanged() {
 }
 
 function Refresh() {
-    logger.logTrace('Refresh');
+    logger.logInfo('Refresh', LogInfoLevel.High);
 
     device.SendProgramsRequest();
     device.SendZonesRequest();
@@ -205,7 +203,7 @@ function Refresh() {
 }
 
 function SelectProgram(index: number) {
-    logger.logTrace('SelectProgram');
+    logger.logInfo('SelectProgram', LogInfoLevel.High);
 
     if (index < 0) { return; }
 
@@ -256,7 +254,7 @@ function SelectProgram(index: number) {
 }
 
 function SelectZone(index: number) {
-    logger.logTrace('SelectZone');
+    logger.logInfo('SelectZone', LogInfoLevel.High);
 
     if (index < 0) {
         return;
@@ -283,49 +281,49 @@ function SelectZone(index: number) {
 }
 
 function StartProgram(program: number) {
-    logger.logTrace('StartProgram, program: [' + program + ']');
+    logger.logInfo('StartProgram, program: [' + program + ']', LogInfoLevel.High);
 
     device.StartProgram(program);
 }
 
 function StartSelectedProgram() {
-    logger.logTrace('StartSelectedProgram');
+    logger.logInfo('StartSelectedProgram', LogInfoLevel.High);
 
     StartProgram(selectedProgramIndex + 1);
 }
 
 function StartSelectedZone(duration: number) {
-    logger.logTrace('StartSelectedZone, duration: [' + duration + ']');
+    logger.logInfo('StartSelectedZone, duration: [' + duration + ']', LogInfoLevel.High);
 
     StartZone(selectedZoneIndex + 1, duration);
 }
 
 function StartZone(zone: number, duration: number) {
-    logger.logTrace('StartZone, zone: [' + zone + '], duration: [' + duration + ']');
+    logger.logInfo('StartZone, zone: [' + zone + '], duration: [' + duration + ']', LogInfoLevel.High);
 
     device.StartZone(zone, duration);
 }
 
 function StopProgram(program: number) {
-    logger.logTrace('StopProgram, program: [' + program + ']');
+    logger.logInfo('StopProgram, program: [' + program + ']', LogInfoLevel.High);
 
     device.StopProgram(program);
 }
 
 function StopSelectedProgram() {
-    logger.logTrace('StopSelectedProgram');
+    logger.logInfo('StopSelectedProgram', LogInfoLevel.High);
 
     StopProgram(selectedProgramIndex + 1);
 }
 
 function StopSelectedZone() {
-    logger.logTrace('StopSelectedZone');
+    logger.logInfo('StopSelectedZone', LogInfoLevel.High);
 
     StopZone(selectedZoneIndex + 1);
 }
 
 function StopZone(zone: number) {
-    logger.logTrace('StopZone, zone: [' + zone +']');
+    logger.logInfo('StopZone, zone: [' + zone +']', LogInfoLevel.High);
 
     device.StopZone(zone);
 }

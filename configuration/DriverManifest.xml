@@ -3,12 +3,12 @@
 	<driver
 		id="{dbcf89e9-b772-43a1-90ea-b7179a40c09d}"
 
-		name="Rain Machine"
+		name="RainMachine"
 		author="Noesis Labs LLC"
 		copyright="Copyright 2020 Noesis Labs LLC"
 		deviceManufacturer="RainMachine"
 		deviceModel=""
-		driverVersion="1.1"
+		driverVersion="1.3"
 		
 		minimumRuntimeVersion="20"
 		minimumSoftwareVersion="9.9"
